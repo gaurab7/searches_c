@@ -1,102 +1,84 @@
 #include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
 
-#define ROW 5
-#define COL 5
+#define MAX 10
+#define INF 9999
 
-typedef struct { int r, c; } Point;
-typedef struct { Point p; int g, h; } Node;
-
-int grid[ROW][COL] = {
+int n=5;                          // Number of nodes
+int adj[MAX][MAX] = {
     {0,0,0,1,0},
     {1,0,1,0,0},
     {0,0,0,0,1},
     {0,1,1,0,0},
     {0,0,0,0,0}
-};
+};              // Adjacency matrix (0 or 1)
+int cost[MAX][MAX] = {
+    {0,1,2,0,0},
+    {1,0,0,3,0},
+    {2,0,0,1,4},
+    {0,3,1,0,0},
+    {0,0,4,0,0}
+};     // Cost between nodes
+int heuristic[MAX];             // Heuristic values
+int visited[MAX];               // Visited array
 
-int visited[ROW][COL];
-Point parent[ROW][COL];
+void aStar(int start, int goal) {
+    int current = start;
+    int g[MAX];                 // g[n]: cost from start to node n
 
-int dr[] = {-1, 1, 0, 0};
-int dc[] = {0, 0, -1, 1};
+    // Initialize
+    for (int i = 0; i < n; i++) {
+        g[i] = INF;
+        visited[i] = 0;
+    }
 
-int inBounds(int r, int c) {
-    return (r >= 0 && r < ROW && c >= 0 && c < COL);
-}
+    g[start] = 0;
+    printf("Path: %d", start);
 
-int heuristic(Point a, Point b) {
-    return abs(a.r - b.r) + abs(a.c - b.c);
-}
+    while (current != goal) {
+        visited[current] = 1;
+        int next = -1;
+        int minF = INF;
 
-void astar(Point start, Point goal) {
-    Node open[ROW*COL];
-    int count = 0;
+        for (int i = 0; i < n; i++) {
+            if (adj[current][i] && !visited[i]) {
+                int newG = g[current] + cost[current][i];
+                int f = newG + heuristic[i];
 
-    visited[start.r][start.c] = 1;
-    open[count++] = (Node){start, 0, heuristic(start, goal)};
-
-    while(count > 0) {
-        int best = 0;
-        for(int i=1; i<count; i++) {
-            int f_best = open[best].g + open[best].h;
-            int f_i = open[i].g + open[i].h;
-            if(f_i < f_best) best = i;
-        }
-        Node cur = open[best];
-        open[best] = open[--count];
-
-        if(cur.p.r == goal.r && cur.p.c == goal.c) break;
-
-        for(int i=0;i<4;i++) {
-            int nr = cur.p.r + dr[i];
-            int nc = cur.p.c + dc[i];
-            if(inBounds(nr, nc) && !visited[nr][nc] && grid[nr][nc] == 0) {
-                visited[nr][nc] = 1;
-                parent[nr][nc] = cur.p;
-                open[count++] = (Node){{nr, nc}, cur.g + 1, heuristic((Point){nr, nc}, goal)};
+                if (f < minF) {
+                    minF = f;
+                    next = i;
+                    g[i] = newG;
+                }
             }
         }
-    }
-}
 
-void printPath(Point start, Point goal) {
-    if(!visited[goal.r][goal.c]) {
-        printf("No path found!\n");
-        return;
-    }
-    Point path[ROW*COL];
-    int length = 0;
-    Point cur = goal;
-    while(!(cur.r == start.r && cur.c == start.c)) {
-        path[length++] = cur;
-        cur = parent[cur.r][cur.c];
-    }
-    path[length++] = start;
+        if (next == -1) {
+            printf("\nNo path to goal found.\n");
+            return;
+        }
 
-    printf("Path (A*):\n");
-    for(int i=length-1; i>=0; i--) {
-        printf("(%d,%d) ", path[i].r, path[i].c);
+        printf(" -> %d", next);
+        current = next;
     }
-    printf("\nPath Cost: %d\n", length-1);
-    printf("Heuristic Cost (start->goal): %d\n", heuristic(start, goal));
+
+    printf("\nPath Cost: %d\n", g[goal]);
 }
 
 int main() {
-    Point start, goal;
-    printf("Enter start (row col): ");
-    scanf("%d %d", &start.r, &start.c);
-    printf("Enter goal (row col): ");
-    scanf("%d %d", &goal.r, &goal.c);
+    int start, goal;
 
-    if(!inBounds(start.r, start.c) || !inBounds(goal.r, goal.c) ||
-       grid[start.r][start.c] == 1 || grid[goal.r][goal.c] == 1) {
-        printf("Invalid start or goal!\n");
-        return 0;
+    printf("Enter heuristic values:\n");
+    for (int i = 0; i < 5; i++) {
+        printf("Heuristic for node %d: ", i);
+        scanf("%d", &heuristic[i]);
     }
 
-    astar(start, goal);
-    printPath(start, goal);
+    printf("Enter start node: ");
+    scanf("%d", &start);
+    printf("Enter goal node: ");
+    scanf("%d", &goal);
+
+    aStar(start, goal);
+
     return 0;
 }
