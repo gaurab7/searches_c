@@ -1,2 +1,2 @@
-# searches_c
-searching algorithms - C
+# lab
+- lab stuff
